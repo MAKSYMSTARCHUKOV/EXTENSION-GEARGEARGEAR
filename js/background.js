@@ -1,3 +1,11 @@
+const ONETIMERS = [
+  () => {
+    [...document.querySelectorAll('span.fc-preference-slider [type="checkbox"]')]
+      .filter(el => el.checked)
+      .forEach((el, i, arr) => (el.checked = false, i === arr.length - 1 && console.log(`unchecked: ${arr.length}`)))
+  }
+]
+
 const STORAGE =  Object.freeze({
   'https://uaserial.top': [
     () => {
@@ -46,18 +54,30 @@ async function executeUrl(tab, origin){
     }
 }
 
+function runOneTimers(tab){
+  for(const func of (ONETIMERS || [])){
+      chrome.scripting.executeScript({
+      target: {tabId: tab.id},
+      func
+    });
+  }
+}
+
 chrome.action.onClicked.addListener(async () => {
     const tab = await getCurrentTab()
     const origin = new URL(tab.url).origin
-    const storage = (await chrome.storage.sync.get()) || {}
-    const state = storage[origin]
-    if(state){
-      storage[origin] = 0
-      chrome.storage.sync.set(storage)
-      chrome.tabs.reload()
-      return
+    if(origin in STORAGE){
+      const storage = (await chrome.storage.sync.get()) || {}
+      const state = storage[origin]
+      if(state){
+        storage[origin] = 0
+        chrome.storage.sync.set(storage)
+        chrome.tabs.reload()
+        return
+      }
+      executeUrl(tab, origin)
     }
-    executeUrl(tab, origin)
+    runOneTimers(tab)
     storage[origin] = 1
     chrome.storage.sync.set(storage)
   })
