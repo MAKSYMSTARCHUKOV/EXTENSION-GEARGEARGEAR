@@ -6,6 +6,24 @@ const ONETIMERS = [
   }
 ]
 
+const CHROME_FUNCTIONS = Object.freeze({
+  'https://roboatino.itch.io': [
+    tab => {
+      chrome.tabs.update(tab.id, {
+        url: 'https://html-classic.itch.zone/html/6187898/ShogunShowdown_WebGL/index.html'
+      })
+    }
+  ],
+  'https://wired-dreams-studio.itch.io': [
+    tab => {
+      chrome.tabs.update(tab.id, {
+        url: 'https://html-classic.itch.zone/html/5481547/index.html'
+      })
+    }
+  ],
+
+})
+
 const STORAGE =  Object.freeze({
   'https://uaserial.top': [
     () => {
@@ -31,6 +49,40 @@ const STORAGE =  Object.freeze({
       if(playok){
         playok.style.marginRight = '0';
       }
+    }
+  ],
+  'https://html-classic.itch.zone/html/6187898/ShogunShowdown_WebGL/index.html': [
+    () => {
+      // Shogun Game fullscreen
+      const canvas = document.getElementById('unity-canvas')
+      if(canvas){
+        canvas.style.width = '100vw'
+      }
+    }
+  ],
+  'https://html-classic.itch.zone/html/5481547/index.html': [
+    () => {
+      // Frogue Fullscreen fullscreen
+      const canvas = document.getElementById('canvas')
+      console.log(canvas);
+      
+      if(canvas){
+        canvas.style.height = '100vh'
+      }
+    }
+  ],
+  'https://www.playok.com/en/spades/#\\d': [
+    () => {
+      function fullSize(){
+        setTimeout(() => {
+        document.getElementById('appcont').style.top = '0';
+        document.getElementById('appcont').style.maxWidth = 'none';
+        document.querySelector('.gview').style.height = '100vh';
+        document.querySelector('#precont > .gview > .bcont.noth > canvas').style.height = '100vh';
+      }, 1000)
+      }
+      window.addEventListener('resize', fullSize)
+      fullSize()
     }
   ]
 })
@@ -63,33 +115,49 @@ function runOneTimers(tab){
   }
 }
 
+function runChromeFunctions(tab){
+  const origin = new URL(tab.url).origin
+  for(const func of CHROME_FUNCTIONS[origin] || []){
+    func(tab)
+  }
+}
+
 chrome.action.onClicked.addListener(async () => {
     const tab = await getCurrentTab()
-    const origin = new URL(tab.url).origin
-    if(origin in STORAGE){
-      const storage = (await chrome.storage.sync.get()) || {}
-      const state = storage[origin]
-      if(state){
-        storage[origin] = 0
+    const tabUrl = new URL(tab.url)
+    console.log(tabUrl);
+    Object.keys(STORAGE).forEach(async match => {
+      if(new RegExp(match).test(tabUrl.href)){
+        const storage = (await chrome.storage.sync.get()) || {}
+        const state = storage[match]
+        if(state){
+          storage[match] = 0
+          chrome.storage.sync.set(storage)
+          chrome.tabs.reload()
+          return
+        }
+        executeUrl(tab, match)
+        storage[match] = 1
         chrome.storage.sync.set(storage)
-        chrome.tabs.reload()
-        return
       }
-      executeUrl(tab, origin)
-    }
+    })
     runOneTimers(tab)
-    storage[origin] = 1
-    chrome.storage.sync.set(storage)
+    runChromeFunctions(tab)
   })
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if(['loading', 'complete'].includes(changeInfo.status)){
     const tab = await getCurrentTab()
-    const origin = new URL(tab.url).origin
-    const storage = await chrome.storage.sync.get()
-    const state = storage[origin]
-    if(state){
-      executeUrl(tab, origin)
-    }
+    const tabUrl = new URL(tab.url)
+    console.log(tabUrl);
+    Object.keys(STORAGE).forEach(async match => {
+      if(new RegExp(match).test(tabUrl.href)){  
+        const storage = await chrome.storage.sync.get()
+        const state = storage[match]
+        if(state){
+          executeUrl(tab, match)
+        }
+      }
+    })
   }
 })
