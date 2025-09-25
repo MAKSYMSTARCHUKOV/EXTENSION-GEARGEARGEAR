@@ -21,6 +21,34 @@ const CHROME_FUNCTIONS = Object.freeze({
       })
     }
   ],
+  'https://www.inzhur.reit': [
+    tab => {
+      async function func(){
+        try{
+          const response = await fetch("https://www.inzhur.reit/assets");
+          const bondsJson = await response.json()
+          const bondsList = bondsJson.filter(bond => bond.type === 'bond').map(bond => {
+            const { isin, maturityDate: date, prices: {buy}, paymentSchedule } = bond.assetDetails
+            return {
+              isin,
+              date,
+              buy,
+              ytm: paymentSchedule[0].amount / 100
+            }
+          })
+          bondsList.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          console.table(bondsList)
+        } catch(e) {
+          console.log('No Bonds')
+          console.log(e)
+        }
+      }
+      chrome.scripting.executeScript({
+        target: {tabId: tab.id},
+        func
+      })
+    }
+  ]
 
 })
 
@@ -125,7 +153,7 @@ function runChromeFunctions(tab){
 chrome.action.onClicked.addListener(async () => {
     const tab = await getCurrentTab()
     const tabUrl = new URL(tab.url)
-    console.log(tabUrl);
+    // console.log(tabUrl);
     Object.keys(STORAGE).forEach(async match => {
       if(new RegExp(match).test(tabUrl.href)){
         const storage = (await chrome.storage.sync.get()) || {}
@@ -149,7 +177,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if(['loading', 'complete'].includes(changeInfo.status)){
     const tab = await getCurrentTab()
     const tabUrl = new URL(tab.url)
-    console.log(tabUrl);
+    // console.log(tabUrl);
     Object.keys(STORAGE).forEach(async match => {
       if(new RegExp(match).test(tabUrl.href)){  
         const storage = await chrome.storage.sync.get()
