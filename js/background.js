@@ -48,6 +48,50 @@ const CHROME_FUNCTIONS = Object.freeze({
         func
       })
     }
+  ],
+  'https://univer.1b.app': [
+    tab => {
+      async function func(){
+        try{
+          const response = await fetch("https://www.inzhur.reit/assets");
+          const bondsJson = await response.json()
+          const bondsList = bondsJson.filter(bond => bond.type === 'bond').map(bond => {
+            const { isin, maturityDate: date, prices: {buy: price}, paymentSchedule } = bond.assetDetails
+            return {
+              shop: 'inzhur',
+              isin,
+              date,
+              price,
+              ytm: paymentSchedule[0].amount / 100
+            }
+          })
+          // ------------------------
+          
+          const bodyStrRows = [...document.querySelectorAll('.os-table tr')].slice(1)
+          bondsList.push(...bodyStrRows.map(row => {
+            const td = row.children
+            const [isin, date, price, percent] = [td[2].textContent, td[3].textContent, td[5].textContent.replace(/\s/g, '') , td[4].textContent]
+            return {
+              shop: 'univer',
+              isin,
+              date,
+              price: parseFloat(price),
+              ytm: percent + '%'
+            }
+          }))
+          
+          bondsList.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          console.table(bondsList)
+        } catch(e) {
+          console.log('No Bonds')
+          console.log(e)
+        }
+      }
+      chrome.scripting.executeScript({
+        target: {tabId: tab.id},
+        func
+      })
+    }
   ]
 
 })
