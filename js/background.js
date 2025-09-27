@@ -52,13 +52,14 @@ const CHROME_FUNCTIONS = Object.freeze({
   'https://univer.1b.app': [
     tab => {
       async function func(){
+        const getUnique = (list) => list.reduce((res, record) => (!res.some(({isin}) => isin === record.isin) && res.push(record), res), [])
         try{
           const response = await fetch("https://www.inzhur.reit/assets");
           const bondsJson = await response.json()
           const bondsList = bondsJson.filter(bond => bond.type === 'bond').map(bond => {
             const { isin, maturityDate: date, prices: {buy: price}, paymentSchedule } = bond.assetDetails
             return {
-              shop: 'inzhur',
+              shop: '•|n)|(ur',
               isin,
               date,
               price,
@@ -72,16 +73,24 @@ const CHROME_FUNCTIONS = Object.freeze({
             const td = row.children
             const [isin, date, price, percent] = [td[2].textContent, td[3].textContent, td[5].textContent.replace(/\s/g, '') , td[4].textContent]
             return {
-              shop: 'univer',
+              shop: 'yn1ver',
               isin,
               date,
               price: parseFloat(price),
               ytm: percent + '%'
             }
           }))
-          
           bondsList.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-          console.table(bondsList)
+          console.clear()
+          console.table(getUnique(bondsList))
+          console.log('----------------------------');
+          console.log('----------------------------');
+          let prises = getUnique([...bondsList].filter(({date}) => +date.substring(0, 4) > 2025))
+          prises.sort((a,b) => a.price - b.price)
+
+          prises = prises.slice(0, 7)
+          prises.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          console.table(prises)
         } catch(e) {
           console.log('No Bonds')
           console.log(e)
