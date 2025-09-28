@@ -28,16 +28,22 @@ const CHROME_FUNCTIONS = Object.freeze({
           const response = await fetch("https://www.inzhur.reit/assets");
           const bondsJson = await response.json()
           const bondsList = bondsJson.filter(bond => bond.type === 'bond').map(bond => {
-            const { isin, maturityDate: date, prices: {buy}, paymentSchedule } = bond.assetDetails
+            const { isin, maturityDate: date, prices: {buy: price}, paymentSchedule } = bond.assetDetails
             return {
               isin,
               date,
-              buy,
+              price,
               ytm: paymentSchedule[0].amount / 100
             }
-          })
+          }).filter(({date}) => +date.substring(0, 4) > 2025)
+          console.clear()
           bondsList.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
           console.table(bondsList)
+          const prices = [...bondsList]
+          prices.sort((a,b) => a.price - b.price)
+          prices.splice(7)
+          prices.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          console.table(prices)
         } catch(e) {
           console.log('No Bonds')
           console.log(e)
