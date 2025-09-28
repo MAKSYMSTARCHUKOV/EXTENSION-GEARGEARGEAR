@@ -3,6 +3,32 @@ const ONETIMERS = [
     [...document.querySelectorAll('span.fc-preference-slider [type="checkbox"]')]
       .filter(el => el.checked)
       .forEach((el, i, arr) => (el.checked = false, i === arr.length - 1 && console.log(`unchecked: ${arr.length}`)))
+  },
+  async () => {
+    try{
+        const response = await fetch("https://www.inzhur.reit/assets");
+        const bondsJson = await response.json()
+        const bondsList = bondsJson.filter(bond => bond.type === 'bond').map(bond => {
+          const { isin, maturityDate: date, prices: {buy: price}, paymentSchedule } = bond.assetDetails
+          return {
+            isin,
+            date,
+            price,
+            ytm: paymentSchedule[0].amount / 100
+          }
+        }).filter(({date}) => +date.substring(0, 4) > 2025)
+        console.clear()
+        bondsList.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        console.table(bondsList)
+        const prices = [...bondsList]
+        prices.sort((a,b) => a.price - b.price)
+        prices.splice(7)
+        prices.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        console.table(prices)
+      } catch(e) {
+        console.log('No Bonds')
+        console.log(e)
+      }
   }
 ]
 
@@ -18,40 +44,6 @@ const CHROME_FUNCTIONS = Object.freeze({
     tab => {
       chrome.tabs.update(tab.id, {
         url: 'https://html-classic.itch.zone/html/5481547/index.html'
-      })
-    }
-  ],
-  'https://www.inzhur.reit': [
-    tab => {
-      async function func(){
-        try{
-          const response = await fetch("https://www.inzhur.reit/assets");
-          const bondsJson = await response.json()
-          const bondsList = bondsJson.filter(bond => bond.type === 'bond').map(bond => {
-            const { isin, maturityDate: date, prices: {buy: price}, paymentSchedule } = bond.assetDetails
-            return {
-              isin,
-              date,
-              price,
-              ytm: paymentSchedule[0].amount / 100
-            }
-          }).filter(({date}) => +date.substring(0, 4) > 2025)
-          console.clear()
-          bondsList.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-          console.table(bondsList)
-          const prices = [...bondsList]
-          prices.sort((a,b) => a.price - b.price)
-          prices.splice(7)
-          prices.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-          console.table(prices)
-        } catch(e) {
-          console.log('No Bonds')
-          console.log(e)
-        }
-      }
-      chrome.scripting.executeScript({
-        target: {tabId: tab.id},
-        func
       })
     }
   ],
