@@ -16,7 +16,7 @@ const ONETIMERS = [
             price,
             ytm: paymentSchedule[0].amount / 100
           }
-        }).filter(({date}) => +date.substring(0, 4) > 2025)
+        }).filter(({date}) => Date.now() + 5 * 30 * 24 * 60 * 60 * 1000 < new Date(date).getTime())
         console.clear()
         bondsList.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         console.table(bondsList)
@@ -77,16 +77,15 @@ const CHROME_FUNCTIONS = Object.freeze({
               price: parseFloat(price),
               ytm: percent + '%'
             }
-          }))
+          })).filter(({date}) => Date.now() + 5 * 30 * 24 * 60 * 60 * 1000 < new Date(date).getTime())
           bondsList.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
           console.clear()
           console.table(getUnique(bondsList))
           console.log('----------------------------');
           console.log('----------------------------');
-          let prises = getUnique([...bondsList].filter(({date}) => +date.substring(0, 4) > 2025))
+          let prises = getUnique([...bondsList])
           prises.sort((a,b) => a.price - b.price)
-
-          prises = prises.slice(0, 7)
+          prises.splice(7)
           prises.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
           console.table(prises)
         } catch(e) {
