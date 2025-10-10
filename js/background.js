@@ -5,6 +5,7 @@ const ONETIMERS = [
       .forEach((el, i, arr) => (el.checked = false, i === arr.length - 1 && console.log(`unchecked: ${arr.length}`)))
   },
   async () => {
+    if(location.href.includes('https://univer.1b.app')) return 
     try{
         const response = await fetch("https://www.inzhur.reit/assets");
         const bondsJson = await response.json()
@@ -54,7 +55,7 @@ const CHROME_FUNCTIONS = Object.freeze({
         try{
           const response = await fetch("https://www.inzhur.reit/assets");
           const bondsJson = await response.json()
-          const bondsList = bondsJson.filter(bond => bond.type === 'bond').map(bond => {
+          let bondsList = bondsJson.filter(bond => bond.type === 'bond').map(bond => {
             const { isin, maturityDate: date, prices: {buy: price}, paymentSchedule } = bond.assetDetails
             return {
               shop: '•|n)|(ur',
@@ -65,7 +66,7 @@ const CHROME_FUNCTIONS = Object.freeze({
             }
           })
           // ------------------------
-          
+
           const bodyStrRows = [...document.querySelectorAll('.os-table tr')].slice(1)
           bondsList.push(...bodyStrRows.map(row => {
             const td = row.children
@@ -77,7 +78,8 @@ const CHROME_FUNCTIONS = Object.freeze({
               price: parseFloat(price),
               ytm: percent + '%'
             }
-          })).filter(({date}) => Date.now() + 5 * 30 * 24 * 60 * 60 * 1000 < new Date(date).getTime())
+          }))
+          bondsList = bondsList.filter(({date}) => Date.now() + 5 * 30 * 24 * 60 * 60 * 1000 < new Date(date).getTime())
           bondsList.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
           console.clear()
           console.table(getUnique(bondsList))
