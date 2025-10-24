@@ -5,7 +5,7 @@ const ONETIMERS = [
       .forEach((el, i, arr) => (el.checked = false, i === arr.length - 1 && console.log(`unchecked: ${arr.length}`)))
   },
   async () => {
-    if(location.href.includes('https://univer.1b.app')) return 
+    if(['https://univer.1b.app', 'https://trade.online.icu/app/ovdp/uah/buy'].some(url => location.href.startsWith(url))) return 
     try{
         const response = await fetch("https://www.inzhur.reit/assets");
         const bondsJson = await response.json()
@@ -33,6 +33,7 @@ const ONETIMERS = [
   }
 ]
 
+
 const CHROME_FUNCTIONS = Object.freeze({
   'https://roboatino.itch.io': [
     tab => {
@@ -49,56 +50,30 @@ const CHROME_FUNCTIONS = Object.freeze({
     }
   ],
   'https://univer.1b.app': [
-    tab => {
-      async function func(){
-        const getUnique = (list) => list.reduce((res, record) => (!res.some(({isin}) => isin === record.isin) && res.push(record), res), [])
-        try{
-          const response = await fetch("https://www.inzhur.reit/assets");
-          const bondsJson = await response.json()
-          let bondsList = bondsJson.filter(bond => bond.type === 'bond').map(bond => {
-            const { isin, maturityDate: date, prices: {buy: price}, paymentSchedule } = bond.assetDetails
-            return {
-              shop: '•|n)|(ur',
-              isin,
-              date,
-              price,
-              ytm: paymentSchedule[0].amount / 100
-            }
-          })
-          // ------------------------
-
-          const bodyStrRows = [...document.querySelectorAll('.os-table tr')].slice(1)
-          bondsList.push(...bodyStrRows.map(row => {
-            const td = row.children
-            const [isin, date, price, percent] = [td[2].textContent, td[3].textContent, td[5].textContent.replace(/\s/g, '') , td[4].textContent]
-            return {
-              shop: 'yn1ver',
-              isin,
-              date,
-              price: parseFloat(price),
-              ytm: percent + '%'
-            }
-          }))
-          bondsList = bondsList.filter(({date}) => Date.now() + 5 * 30 * 24 * 60 * 60 * 1000 < new Date(date).getTime())
-          bondsList.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-          console.clear()
-          console.table(getUnique(bondsList))
-          console.log('----------------------------');
-          console.log('----------------------------');
-          let prises = getUnique([...bondsList])
-          prises.sort((a,b) => a.price - b.price)
-          prises.splice(7)
-          prises.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-          console.table(prises)
-        } catch(e) {
-          console.log('No Bonds')
-          console.log(e)
-        }
-      }
+    async (tab, key) => {
+      const storage = (await chrome.storage.sync.get()) || {}
+      const icu = storage.icu || []
+      
       chrome.scripting.executeScript({
         target: {tabId: tab.id},
-        func
+        files: ['js/content.js']
       })
+
+      chrome.tabs.sendMessage(tab.id, { ext: "Geargeargear", key, data: '-?Helo' });
+    }
+  ],
+  'https://trade.online.icu/app/ovdp/uah/buy': [
+    async (tab) => {
+      const [{result: data}] = await chrome.scripting.executeScript({
+        target: {tabId: tab.id},
+        func: () => {
+          let stuff
+          return stuff
+        }
+      })
+      const storage = (await chrome.storage.sync.get()) || {}
+      storage.icu = data
+      chrome.storage.sync.set(storage)
     }
   ]
 
@@ -186,7 +161,7 @@ async function executeUrl(tab, origin){
     }
 }
 
-function runOneTimers(tab){
+function runOneTimers(tab, id,){
   for(const func of (ONETIMERS || [])){
       chrome.scripting.executeScript({
       target: {tabId: tab.id},
@@ -196,15 +171,19 @@ function runOneTimers(tab){
 }
 
 function runChromeFunctions(tab){
-  const origin = new URL(tab.url).origin
-  for(const func of CHROME_FUNCTIONS[origin] || []){
-    func(tab)
+  const { href } = new URL(tab.url)
+  const passed = Object.keys(CHROME_FUNCTIONS).filter(url => href.startsWith(url)) || []
+  for(const key of passed){
+    for(const func of CHROME_FUNCTIONS[key]){
+      func(tab, key)
+    }
   }
 }
 
 chrome.action.onClicked.addListener(async () => {
     const tab = await getCurrentTab()
     const tabUrl = new URL(tab.url)
+    const id = await chrome.runtime.id
     // console.log(tabUrl);
     Object.keys(STORAGE).forEach(async match => {
       if(new RegExp(match).test(tabUrl.href)){
@@ -221,7 +200,7 @@ chrome.action.onClicked.addListener(async () => {
         chrome.storage.sync.set(storage)
       }
     })
-    runOneTimers(tab)
+    runOneTimers(tab, id)
     runChromeFunctions(tab)
   })
 

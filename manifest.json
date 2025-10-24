@@ -25,7 +25,13 @@
     "storage"
   ],
   "host_permissions": [
-     "https://*/*",
+    "https://*/*",
     "http://*/*"
-  ]
+  ],
+  "web_accessible_resources": [{
+    "resources": ["js/connector.js"],
+    "matches": [
+      "https://univer.1b.app/*"
+    ]
+  }]
 }
