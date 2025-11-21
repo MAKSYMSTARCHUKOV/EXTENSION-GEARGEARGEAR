@@ -52,27 +52,29 @@ const CHROME_FUNCTIONS = Object.freeze({
   'https://univer.1b.app': [
     async (tab, key) => {
       const storage = (await chrome.storage.sync.get()) || {}
-      const icu = storage.icu || []
+      let icu = []
+      try {
+        icu = JSON.parse(storage.icu)
+      } catch (error) {
+        console.log(error);
+      }
       
-      chrome.scripting.executeScript({
+      await chrome.scripting.executeScript({
         target: {tabId: tab.id},
         files: ['js/content.js']
       })
 
-      chrome.tabs.sendMessage(tab.id, { ext: "Geargeargear", key, data: '-?Helo' });
+      chrome.tabs.sendMessage(tab.id, { ext: "Geargeargear", key, data: icu });
     }
   ],
   'https://trade.online.icu/app/ovdp/uah/buy': [
-    async (tab) => {
-      const [{result: data}] = await chrome.scripting.executeScript({
+    async (tab, key) => {
+      const scriptResult = await chrome.scripting.executeScript({
         target: {tabId: tab.id},
-        func: () => {
-          let stuff
-          return stuff
-        }
+        files: ['js/icu.js']
       })
       const storage = (await chrome.storage.sync.get()) || {}
-      storage.icu = data
+      storage.icu = scriptResult[0].result
       chrome.storage.sync.set(storage)
     }
   ]

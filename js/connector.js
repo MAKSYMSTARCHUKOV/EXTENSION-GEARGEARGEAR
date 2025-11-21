@@ -47,7 +47,6 @@ window.addEventListener("message", async (event) => {
         prises.splice(7)
         prises.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         console.table(prises)
-        console.log(icu);
       } catch(e) {
         console.log('No Bonds')
         console.log(e)
