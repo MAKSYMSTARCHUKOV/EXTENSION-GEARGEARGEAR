@@ -4,11 +4,11 @@ window.addEventListener("message", async (event) => {
   if (event.data?.ext === "Geargeargear") {
     if((event.data?.key || '').startsWith('https://univer.1b.app')){
       const {data: icu} = event.data
+      
       const getUnique = (list) => list.reduce((res, record) => (!res.some(({isin}) => isin === record.isin) && res.push(record), res), [])
       try{
-        icu.forEach(bond => ({
-          shop: 'ICU',
-          ...bond
+        icu.forEach(bond => Object.assign(bond, {
+          shop: 'ICU'
         }))
         const response = await fetch("https://www.inzhur.reit/assets");
         const bondsJson = await response.json()
@@ -36,10 +36,11 @@ window.addEventListener("message", async (event) => {
             ytm: percent + '%'
           }
         }), ...icu)
-        bondsList = bondsList.filter(({date}) => Date.now() + 5 * 30 * 24 * 60 * 60 * 1000 < new Date(date).getTime())
+        bondsList = bondsList.filter(({date}) => Date.now() + 12 * 30 * 24 * 60 * 60 * 1000 < new Date(date).getTime())
         bondsList.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         console.clear()
-        console.table(getUnique(bondsList))
+        // console.table(getUnique(bondsList))
+        console.table(bondsList)
         console.log('----------------------------');
         console.log('----------------------------');
         let prises = getUnique([...bondsList])
