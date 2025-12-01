@@ -30,6 +30,27 @@ const ONETIMERS = [
         console.log('No Bonds')
         console.log(e)
       }
+  },
+  () => {
+    if(!location.href.startsWith('https://www.playboyplus.com/en/login')) return
+      const dic = {username: 'absolem.gs@gmail.com', password: 'sL$686jyNnuY4tR'}
+      let intId
+      let fields = () => Object.keys(dic).reduce((res, key) => {
+        res[key] = document.querySelector(`#${key}`)
+        return res
+      }, {})
+      if(intId) return
+      intId = setInterval(() => {
+        let fieldsList = fields()
+        if(!fieldsList[Object.keys(fieldsList)[0]]) return
+        clearInterval(intId)
+        Object.keys(fieldsList).forEach(key => {
+          fieldsList[key].value = dic[key]
+        })
+        setTimeout(() => {
+          document.querySelector('#submit').click()
+        }, 100)
+      }, 400)
   }
 ]
 
